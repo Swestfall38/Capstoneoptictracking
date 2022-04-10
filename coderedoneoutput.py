@@ -14,41 +14,69 @@ cap = cv2.VideoCapture(0)
 fileout=open('80cm.txt','w')
 # The device number might be 0 or 1 depending on the device and the webcam
 
+# -10 for lit-room, -4 for dark room 
+cap.set(cv2.CAP_PROP_EXPOSURE, -10)
+
 while(True):
     _, frame = cap.read()
     centers=[]
     height =[]
+    width =[]
     hsv_frame =cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-    light_orange = (94, 188, 92) # previous value 1,190, 200
-    dark_orange  = (125, 240, 255) 
-    mask = cv2.inRange(hsv_frame, light_orange, dark_orange)
+    daylowb_green = (55, 30, 81)# previous value 1,190, 200
+    dayupb_green  = (91,255,255) 
+    nightlowb_green = (64, 11, 70)
+    nightupb_green = (112,206,255)
+    
+    #get avg intensity
+    avg_intensity = np.mean(cv.cvtColor(frame,cv.COLOR_BGR2GRAY))
+    #print('intensity:',avg_intensity)
+  
+    
+    
+    if (avg_intensity > 50):
+        mask = cv2.inRange(hsv_frame, daylowb_green, dayupb_green)
+    else:
+        # set for night  
+        mask = cv2.inRange(hsv_frame, nightlowb_green, nightupb_green)
+    
+    
     color_segmented = cv2.bitwise_and(frame, frame, mask=mask)
     
     color = (0, 0, 255)
     imgray = cv.cvtColor(color_segmented, cv.COLOR_BGR2GRAY)
-   # #edged = cv2.Canny(imgray, 50, 100)
-    ##edged = cv2.dilate(edged, None, iterations=1)
+    #edged = cv2.Canny(imgray, 50, 100)
+    
     ##edged = cv2.erode(edged, None, iterations=1)
-    edged = imgray 
-    cnts = cv2.findContours(edged, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    #imgray = cv2.medianBlur(imgray, 3)
+    se = np.ones((5,5),dtype='uint8')
+    edged = cv2.morphologyEx(imgray, cv2.MORPH_CLOSE, se)
+    cnts = cv2.findContours(imgray, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     #cv.drawContours(frame, contours, -1, (0,255,0), 2)
     
     cnts = imutils.grab_contours(cnts)
     
     for c in cnts:
-            
         
+        
+        # if smaller than 20 pixles, ignore
+        n_pixels = np.count_nonzero(c)
+        if n_pixels < 40:
+            continue
+            
         
         x,y,w,h = cv2.boundingRect(c)
         height.append(h)
+        width.append(w)
         if len(height) >=2:
             print(height[0], height[1])
         cv2.putText(frame, str(h), (x,y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (36,255,12), 1)
-        fileout.write(str(h))
+        fileout.write(str(height[0]))
         fileout.write('\t')
         fileout.write('\n') 
-        
+        fileout.write(str(height[1]))
+
         
         M = cv2.moments(c)
         if M["m00"] != 0:
@@ -70,7 +98,7 @@ while(True):
                 #print(D)
                 #cv2.line(frame, (centers[0][0], centers[0][1]), (centers[1][0], centers[1][1]), (0, 255, 0), 2)
                 Dist = str(D)
-                fileout.write(Dist)
+                #fileout.write(Dist)
                 
                 #cv2.putText(frame, Dist, (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
                 
@@ -79,23 +107,21 @@ while(True):
             
                 
             
-
-            
-            
-        else:
+    #cv2.imshow('edged', edged)
+    #cv2.imshow('graythresh', imgray)
+    cv2.imshow('frame', frame)
+    cv2.imshow('frame1', color_segmented)
+    #cv2.imshow('frame2', edged)
+    #cv2.imshow('colormask', color_segmented)
     
-     
-    
-            #cv2.imshow('edged', edged)
-            #cv2.imshow('graythresh', imgray)
-            cv2.imshow('frame', frame)
-            cv2.imshow('frame1', color_segmented)
-            cv2.imshow('frame2', edged)
-            #cv2.imshow('colormask', color_segmented)
-           
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(100) & 0xFF == ord('q'):
+        
+        
+        
         
         break
+    
+
 fileout.close()    
 cap.release()
 cv2.destroyAllWindows()
