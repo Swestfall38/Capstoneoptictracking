@@ -15,18 +15,26 @@ fileout=open('80cm.txt','w')
 # The device number might be 0 or 1 depending on the device and the webcam
 
 # -10 for lit-room, -4 for dark room 
-cap.set(cv2.CAP_PROP_EXPOSURE, -10)
-
+cap.set(cv2.CAP_PROP_EXPOSURE, -4)
+#time.sleep(100)
 while(True):
     _, frame = cap.read()
+    gapmat1=[]
+    gap=0
+    bigvec=0
     centers=[]
+    gapmat=[]
     height =[]
     width =[]
     hsv_frame =cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
-    daylowb_green = (55, 30, 81)# previous value 1,190, 200
-    dayupb_green  = (91,255,255) 
+    daylowb_green = (56, 132, 42)
+    dayupb_green  = (76, 227, 255) 
     nightlowb_green = (64, 11, 70)
     nightupb_green = (112,206,255)
+    #daylowb_green = (55, 30, 81)# previous value 1,190, 200
+   # dayupb_green  = (91,255,255) 
+   # nightlowb_green = (64, 11, 70)
+   # nightupb_green = (112,206,255)
     
     #get avg intensity
     avg_intensity = np.mean(cv.cvtColor(frame,cv.COLOR_BGR2GRAY))
@@ -34,11 +42,11 @@ while(True):
   
     
     
-    if (avg_intensity > 50):
-        mask = cv2.inRange(hsv_frame, daylowb_green, dayupb_green)
-    else:
+    #if (avg_intensity > 50):
+    mask = cv2.inRange(hsv_frame, daylowb_green, dayupb_green)
+    #else:
         # set for night  
-        mask = cv2.inRange(hsv_frame, nightlowb_green, nightupb_green)
+       ## mask = cv2.inRange(hsv_frame, nightlowb_green, nightupb_green)
     
     
     color_segmented = cv2.bitwise_and(frame, frame, mask=mask)
@@ -66,16 +74,50 @@ while(True):
             
         
         x,y,w,h = cv2.boundingRect(c)
-        height.append(h)
-        width.append(w)
+        if h>100:
+            height.append(h)
+        if w>100:    
+            width.append(w)
         if len(height) >=2:
-            print(height[0], height[1])
-        cv2.putText(frame, str(h), (x,y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+            fileout.write('Heights: ')
+            fileout.write(str(height[0]))
+            fileout.write('\t')
+            fileout.write(str(height[1]))
+            fileout.write('\n') 
+        
+            
+        if len(height)>=2:
+            gap = abs(height[0]-height[1])
+            
+        print(gap,gapmat1)    
+        gapmat1 = gap
+        
+           
+        
+            
+        
+        
+        #(gapmat)   
+
+  
+            #if :
+               # print('move right')
+           # if height[1]>height[0]:  
+                #print('move left')
+                
+
+        if len(width) >=2:
+            fileout.write('WIDTHS: ')
+            fileout.write(str(width[0]))
+            fileout.write('\t')
+            fileout.write(str(width[1]))
+            fileout.write('\n') 
+        if h > 100:    
+            cv2.putText(frame, str(h), (x+25,y + 100), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
+        if w > 100:    
+            cv2.putText(frame, str(w), (x+100,y +50), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (60,20,220), 2)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (36,255,12), 1)
-        fileout.write(str(height[0]))
-        fileout.write('\t')
-        fileout.write('\n') 
-        fileout.write(str(height[1]))
+
 
         
         M = cv2.moments(c)
@@ -102,11 +144,9 @@ while(True):
                 
                 #cv2.putText(frame, Dist, (cX - 20, cY - 20),cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
                 
-            
-            
-            
-                
-            
+        
+ 
+          
     #cv2.imshow('edged', edged)
     #cv2.imshow('graythresh', imgray)
     cv2.imshow('frame', frame)
