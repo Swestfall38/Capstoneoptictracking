@@ -15,12 +15,14 @@ fileout=open('80cm.txt','w')
 # The device number might be 0 or 1 depending on the device and the webcam
 
 # -10 for lit-room, -4 for dark room 
-cap.set(cv2.CAP_PROP_EXPOSURE, -4)
+cap.set(cv2.CAP_PROP_EXPOSURE, -10)
 #time.sleep(100)
 while(True):
     _, frame = cap.read()
     gapmat1=[]
     gap=0
+    gap2 = 0
+    gapmat2=[]
     bigvec=0
     centers=[]
     gapmat=[]
@@ -65,7 +67,7 @@ while(True):
     cnts = imutils.grab_contours(cnts)
     
     for c in cnts:
-        
+     
         
         # if smaller than 20 pixles, ignore
         n_pixels = np.count_nonzero(c)
@@ -89,10 +91,11 @@ while(True):
         if len(height)>=2:
             gap = abs(height[0]-height[1])
             
-        print(gap,gapmat1)    
-        gapmat1 = gap
-        
-           
+          
+        gapmat1.append(gap)
+       # for i in gapmat1:  
+            #print(i,'\t',i-1)
+            
         
             
         
@@ -112,6 +115,17 @@ while(True):
             fileout.write('\t')
             fileout.write(str(width[1]))
             fileout.write('\n') 
+        if len(width)>=2:
+            gap2 = abs(width[0]-width[1])
+            
+          
+        gapmat2.append(gap2)
+        for x in gapmat2:  
+            print('width  ',x,'\t',x-1)
+            
+            
+            
+            
         if h > 100:    
             cv2.putText(frame, str(h), (x+25,y + 100), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)
         if w > 100:    
